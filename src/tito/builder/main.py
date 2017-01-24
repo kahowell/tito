@@ -224,6 +224,14 @@ class BuilderBase(object):
         self.srpm_location = find_wrote_in_rpmbuild_output(output)[0]
         self.artifacts.append(self.srpm_location)
 
+        # handle an existing .changes file.
+        # TODO: may or may not end up in a OBSBuilder as this is OBS-specific.
+        changes_file = "%s.changes" % self.spec_file[0:-5]
+        if os.path.exists(changes_file):
+            run_command("mv %s %s" % (changes_file, self.rpmbuild_basedir))
+            print("Wrote: %s" % os.path.join(self.rpmbuild_basedir, os.path.basename(changes_file)))
+            self.artifacts.append(os.path.join(self.rpmbuild_basedir, os.path.basename(changes_file)))
+
     # Assume that if tito's --no-cleanup option is set, also disable %clean in rpmbuild:
     def _get_clean_option(self):
         if self.no_cleanup:
@@ -503,6 +511,14 @@ class Builder(ConfigObject, BuilderBase):
         self.spec_file_name = os.path.basename(find_spec_like_file(self.rpmbuild_gitcopy))
         self.spec_file = os.path.join(
             self.rpmbuild_gitcopy, self.spec_file_name)
+
+        # copy rpmlintrc file from archive into the source dir
+        # otherwise build would fail
+        rpmlintrc = "%s-rpmlintrc" % self.spec_file[0:-5]
+        if os.path.exists(rpmlintrc):
+            run_command("cp %s %s" % (rpmlintrc, self.rpmbuild_sourcedir))
+            self.artifacts.append(os.path.join(self.rpmbuild_sourcedir, os.path.basename(rpmlintrc)))
+
 
     def _setup_test_specfile(self):
         if self.test and not self.ran_setup_test_specfile:

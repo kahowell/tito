@@ -173,9 +173,12 @@ class ConfigLoader(object):
 
 def lookup_build_dir(user_config):
     """
-    Read build_dir user config if it exists, otherwise
-    return the current working directory.
+    Read build_dir from environment($RPMBUILD_BASEDIR) or from user config if
+    it exists, otherwise return the DEFAULT_BUILD_DIR.
     """
+    build_dir = os.getenv('RPMBUILD_BASEDIR')
+    if build_dir:
+      return build_dir
     build_dir = DEFAULT_BUILD_DIR
 
     if 'RPMBUILD_BASEDIR' in user_config:
@@ -239,7 +242,7 @@ class BaseCliModule(object):
         default_output_dir = lookup_build_dir(self.user_config)
         if not os.path.exists(default_output_dir):
             print("Creating output directory: %s" % default_output_dir)
-            run_command("mkdir %s" % default_output_dir)
+            run_command("mkdir -p %s" % default_output_dir)
 
         self.parser.add_option("-o", "--output", dest="output_dir",
                 metavar="OUTPUTDIR", default=default_output_dir,
